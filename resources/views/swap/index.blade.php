@@ -219,7 +219,54 @@
                 setToToken(secondToken);
             }
         }
+
+        // If wallet is already connected, refresh balances
+        if (SertiDex.wallet) {
+            setTimeout(() => {
+                refreshSwapBalances();
+            }, 500);
+        }
+
+        // Listen for wallet connection changes
+        window.addEventListener('walletConnected', refreshSwapBalances);
     });
+
+    // Refresh balances for swap page
+    async function refreshSwapBalances() {
+        if (!SertiDex.wallet || typeof ethers === 'undefined' || !window.ethereum) return;
+
+        try {
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+
+            // Get native balance
+            const nativeBalance = await provider.getBalance(SertiDex.wallet);
+            const nativeFormatted = parseFloat(ethers.utils.formatEther(nativeBalance)).toFixed(6);
+
+            // Update native token balances
+            ['ETH', 'MATIC', 'SEP', 'AMOY'].forEach(sym => {
+                SertiDex.balances[sym] = nativeFormatted;
+            });
+
+            // Update UI if tokens are selected
+            if (swapState.fromToken) {
+                if (swapState.fromToken.is_native) {
+                    document.getElementById('fromBalance').textContent = nativeFormatted;
+                } else if (SertiDex.balances[swapState.fromToken.symbol]) {
+                    document.getElementById('fromBalance').textContent = SertiDex.balances[swapState.fromToken.symbol];
+                }
+            }
+
+            if (swapState.toToken) {
+                if (swapState.toToken.is_native) {
+                    document.getElementById('toBalance').textContent = nativeFormatted;
+                } else if (SertiDex.balances[swapState.toToken.symbol]) {
+                    document.getElementById('toBalance').textContent = SertiDex.balances[swapState.toToken.symbol];
+                }
+            }
+        } catch (e) {
+            console.error('Error refreshing swap balances:', e);
+        }
+    }
 
     function selectFromToken() {
         openTokenModal((token) => {

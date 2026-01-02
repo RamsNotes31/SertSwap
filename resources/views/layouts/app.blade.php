@@ -748,61 +748,120 @@
             if (e.target.id === 'walletModal') closeWalletModal();
         }
 
+        // Helper function to detect and get the correct provider
+        function getInjectedProvider(type) {
+            // Check for multiple providers (when user has multiple wallets)
+            if (window.ethereum?.providers?.length) {
+                for (const p of window.ethereum.providers) {
+                    if (type === 'metamask' && p.isMetaMask && !p.isBraveWallet) return p;
+                    if (type === 'coinbase' && p.isCoinbaseWallet) return p;
+                    if (type === 'brave' && p.isBraveWallet) return p;
+                }
+            }
+
+            // Single provider checks
+            if (window.ethereum) {
+                // Brave wallet detection
+                if (type === 'brave' && window.ethereum.isBraveWallet) return window.ethereum;
+                // MetaMask detection (ensure not Brave pretending to be MetaMask)
+                if (type === 'metamask' && window.ethereum.isMetaMask && !window.ethereum.isBraveWallet) return window.ethereum;
+                // Coinbase detection
+                if (type === 'coinbase' && (window.ethereum.isCoinbaseWallet || window.coinbaseWalletExtension)) {
+                    return window.coinbaseWalletExtension || window.ethereum;
+                }
+                // Trust Wallet detection
+                if (type === 'trustwallet' && (window.trustwallet || window.ethereum.isTrust)) {
+                    return window.trustwallet || window.ethereum;
+                }
+                // Opera detection
+                if (type === 'opera' && window.ethereum.isOpera) return window.ethereum;
+                // Generic injected provider
+                if (type === 'injected') return window.ethereum;
+            }
+
+            return null;
+        }
+
+        // Detect which wallet is available
+        function getDetectedWalletName() {
+            if (window.ethereum?.isBraveWallet) return 'Brave Wallet';
+            if (window.ethereum?.isMetaMask) return 'MetaMask';
+            if (window.ethereum?.isCoinbaseWallet) return 'Coinbase';
+            if (window.ethereum?.isTrust || window.trustwallet) return 'Trust Wallet';
+            if (window.ethereum?.isOpera) return 'Opera Wallet';
+            if (window.ethereum) return 'Browser Wallet';
+            return null;
+        }
+
         async function connectWithProvider(providerType) {
             closeWalletModal();
 
             let provider = null;
+            let providerName = providerType;
 
             try {
-                switch (providerType) {
-                    case 'metamask':
-                        if (!window.ethereum?.isMetaMask) {
-                            window.open('https://metamask.io/download/', '_blank');
-                            showToast('Please install MetaMask', 'info');
-                            return;
-                        }
-                        provider = window.ethereum;
-                        break;
+                // Handle injected/browser wallet - auto-detect the wallet type
+                if (providerType === 'injected') {
+                    provider = window.ethereum;
+                    providerName = getDetectedWalletName() || 'Browser Wallet';
 
-                    case 'coinbase':
-                        if (window.ethereum?.isCoinbaseWallet) {
-                            provider = window.ethereum;
-                        } else if (window.coinbaseWalletExtension) {
-                            provider = window.coinbaseWalletExtension;
-                        } else {
-                            window.open('https://www.coinbase.com/wallet', '_blank');
-                            showToast('Please install Coinbase Wallet', 'info');
-                            return;
-                        }
-                        break;
-
-                    case 'trustwallet':
-                        if (window.trustwallet) {
-                            provider = window.trustwallet;
-                        } else if (window.ethereum?.isTrust) {
-                            provider = window.ethereum;
-                        } else {
-                            window.open('https://trustwallet.com/', '_blank');
-                            showToast('Please install Trust Wallet', 'info');
-                            return;
-                        }
-                        break;
-
-                    case 'walletconnect':
-                        showToast('WalletConnect requires additional setup. Use browser wallet for now.', 'info');
+                    if (!provider) {
+                        showToast('No Web3 wallet detected. Please install MetaMask or Brave Wallet.', 'error');
                         return;
+                    }
+                } else {
+                    // Specific wallet requested
+                    switch (providerType) {
+                        case 'metamask':
+                            provider = getInjectedProvider('metamask');
+                            if (!provider) {
+                                // Check if any ethereum provider exists (might be Brave pretending to be MetaMask)
+                                if (window.ethereum?.isMetaMask) {
+                                    provider = window.ethereum;
+                                    providerName = getDetectedWalletName() || 'MetaMask';
+                                } else {
+                                    window.open('https://metamask.io/download/', '_blank');
+                                    showToast('Please install MetaMask', 'info');
+                                    return;
+                                }
+                            }
+                            break;
 
-                    case 'injected':
-                    default:
-                        if (!window.ethereum) {
-                            showToast('No wallet detected. Please install a Web3 wallet.', 'error');
+                        case 'coinbase':
+                            provider = getInjectedProvider('coinbase');
+                            if (!provider) {
+                                window.open('https://www.coinbase.com/wallet', '_blank');
+                                showToast('Please install Coinbase Wallet', 'info');
+                                return;
+                            }
+                            break;
+
+                        case 'trustwallet':
+                            provider = getInjectedProvider('trustwallet');
+                            if (!provider) {
+                                window.open('https://trustwallet.com/', '_blank');
+                                showToast('Please install Trust Wallet', 'info');
+                                return;
+                            }
+                            break;
+
+                        case 'walletconnect':
+                            showToast('WalletConnect coming soon. Use Browser Wallet for now.', 'info');
                             return;
-                        }
-                        provider = window.ethereum;
-                        break;
+
+                        default:
+                            provider = window.ethereum;
+                            providerName = getDetectedWalletName() || 'Browser Wallet';
+                            break;
+                    }
                 }
 
-                showToast('Connecting...', 'info');
+                if (!provider) {
+                    showToast('Wallet not detected. Please install a Web3 wallet.', 'error');
+                    return;
+                }
+
+                showToast('Connecting to ' + providerName + '...', 'info');
 
                 const accounts = await provider.request({ method: 'eth_requestAccounts' });
 
@@ -823,6 +882,9 @@
                 updateWalletUI();
                 await loadTokenBalances();
                 showToast('Wallet connected!', 'success');
+
+                // Dispatch wallet connected event for other components
+                window.dispatchEvent(new CustomEvent('walletConnected', { detail: { address: accounts[0] } }));
 
                 // Setup listeners
                 provider.on('accountsChanged', handleAccountsChanged);
@@ -846,6 +908,9 @@
                 localStorage.setItem('sertidex_wallet', accounts[0]);
                 updateWalletUI();
                 loadTokenBalances();
+
+                // Dispatch event for other components
+                window.dispatchEvent(new CustomEvent('walletConnected', { detail: { address: accounts[0] } }));
             }
         }
 
@@ -879,7 +944,10 @@
                 btn.classList.add('connected');
                 text.textContent = SertiDex.wallet.slice(0, 6) + '...' + SertiDex.wallet.slice(-4);
                 document.getElementById('fullAddress').textContent = SertiDex.wallet.slice(0, 10) + '...' + SertiDex.wallet.slice(-8);
-                document.getElementById('walletProvider').textContent = SertiDex.walletType || 'Unknown';
+
+                // Use detected wallet name for display
+                const walletName = getDetectedWalletName() || SertiDex.walletType || 'Unknown';
+                document.getElementById('walletProvider').textContent = walletName;
             } else {
                 btn.classList.remove('connected');
                 text.textContent = 'Connect Wallet';
@@ -887,29 +955,59 @@
         }
 
         async function loadTokenBalances() {
+            if (!SertiDex.wallet) return;
+
             const container = document.getElementById('tokenBalances');
             container.innerHTML = '<div style="text-align: center; padding: 20px;"><span class="spinner"></span></div>';
 
-            const tokens = SertiDex.tokens.slice(0, 5);
+            // Load all tokens, not just first 5
+            const tokens = SertiDex.tokens;
 
             try {
                 if (typeof ethers !== 'undefined' && window.ethereum && SertiDex.wallet) {
                     const provider = new ethers.providers.Web3Provider(window.ethereum);
 
+                    // First get native balance
+                    try {
+                        const nativeBalance = await provider.getBalance(SertiDex.wallet);
+                        const nativeBalanceFormatted = parseFloat(ethers.utils.formatEther(nativeBalance)).toFixed(6);
+
+                        // Set for all native token symbols
+                        const nativeSymbols = ['ETH', 'MATIC', 'SEP', 'AMOY'];
+                        nativeSymbols.forEach(sym => {
+                            SertiDex.balances[sym] = nativeBalanceFormatted;
+                        });
+                    } catch (e) {
+                        console.error('Error getting native balance:', e);
+                    }
+
+                    // Then get ERC20 balances
                     for (const token of tokens) {
                         try {
                             if (token.is_native) {
-                                const balance = await provider.getBalance(SertiDex.wallet);
-                                SertiDex.balances[token.symbol] = parseFloat(ethers.utils.formatEther(balance)).toFixed(6);
-                            } else if (token.address && token.address !== '0x0000000000000000000000000000000000000000') {
-                                const abi = ['function balanceOf(address) view returns (uint256)', 'function decimals() view returns (uint8)'];
+                                // Already set native balance above
+                                const nativeBalance = await provider.getBalance(SertiDex.wallet);
+                                SertiDex.balances[token.symbol] = parseFloat(ethers.utils.formatEther(nativeBalance)).toFixed(6);
+                            } else if (token.address &&
+                                       token.address !== '0x0000000000000000000000000000000000000000' &&
+                                       token.address.startsWith('0x')) {
+                                const abi = [
+                                    'function balanceOf(address) view returns (uint256)',
+                                    'function decimals() view returns (uint8)'
+                                ];
                                 const contract = new ethers.Contract(token.address, abi, provider);
-                                const [balance, decimals] = await Promise.all([contract.balanceOf(SertiDex.wallet), contract.decimals()]);
+
+                                const [balance, decimals] = await Promise.all([
+                                    contract.balanceOf(SertiDex.wallet),
+                                    contract.decimals()
+                                ]);
+
                                 SertiDex.balances[token.symbol] = parseFloat(ethers.utils.formatUnits(balance, decimals)).toFixed(6);
                             } else {
                                 SertiDex.balances[token.symbol] = '0.000000';
                             }
                         } catch (e) {
+                            console.error(`Error getting balance for ${token.symbol}:`, e);
                             SertiDex.balances[token.symbol] = '0.000000';
                         }
                     }
@@ -917,10 +1015,38 @@
                     tokens.forEach(t => { SertiDex.balances[t.symbol] = '0.000000'; });
                 }
             } catch (e) {
+                console.error('Error loading balances:', e);
                 tokens.forEach(t => { SertiDex.balances[t.symbol] = '0.000000'; });
             }
 
-            renderTokenBalances(tokens);
+            // Render dropdown balances (show first 5)
+            renderTokenBalances(tokens.slice(0, 5));
+
+            // Update swap page balances if we're on swap page
+            updateSwapPageBalances();
+        }
+
+        // Function to update swap page balance displays
+        function updateSwapPageBalances() {
+            // Update "From" token balance
+            const fromBalanceEl = document.getElementById('fromBalance');
+            const toBalanceEl = document.getElementById('toBalance');
+            const fromTokenSymbol = document.getElementById('fromTokenSymbol');
+            const toTokenSymbol = document.getElementById('toTokenSymbol');
+
+            if (fromBalanceEl && fromTokenSymbol) {
+                const fromSymbol = fromTokenSymbol.textContent;
+                if (fromSymbol && SertiDex.balances[fromSymbol]) {
+                    fromBalanceEl.textContent = SertiDex.balances[fromSymbol];
+                }
+            }
+
+            if (toBalanceEl && toTokenSymbol) {
+                const toSymbol = toTokenSymbol.textContent;
+                if (toSymbol && toSymbol !== 'Select' && SertiDex.balances[toSymbol]) {
+                    toBalanceEl.textContent = SertiDex.balances[toSymbol];
+                }
+            }
         }
 
         function renderTokenBalances(tokens) {
