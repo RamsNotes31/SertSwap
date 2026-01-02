@@ -1,59 +1,256 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
-
 <p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
+  <img src="https://img.shields.io/badge/🔄-SertSwap-6366f1?style=for-the-badge&labelColor=1a1a2e" alt="SertSwap Logo" />
 </p>
 
-## About Laravel
+<h1 align="center">
+  <span>🌊 SertSwap DEX</span>
+</h1>
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+<p align="center">
+  <em>Decentralized Token Exchange Platform untuk Testnet</em>
+</p>
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+<p align="center">
+  <img src="https://img.shields.io/badge/Laravel-11-FF2D20?style=flat-square&logo=laravel&logoColor=white" alt="Laravel 11" />
+  <img src="https://img.shields.io/badge/Ethers.js-6.x-3C3C3D?style=flat-square&logo=ethereum&logoColor=white" alt="Ethers.js" />
+  <img src="https://img.shields.io/badge/Network-Sepolia%20|%20Amoy-8247E5?style=flat-square&logo=ethereum&logoColor=white" alt="Networks" />
+  <img src="https://img.shields.io/badge/Protocol-Uniswap%20V2-FF007A?style=flat-square&logo=uniswap&logoColor=white" alt="Uniswap V2" />
+</p>
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+<p align="center">
+  <img src="https://img.shields.io/badge/Status-In%20Development-yellow?style=flat-square" alt="Status" />
+  <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License" />
+</p>
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+## ⚡ Apa itu SertSwap?
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+**SertSwap** adalah platform decentralized exchange (DEX) yang dibangun di atas Laravel dengan integrasi Web3 menggunakan Ethers.js. Platform ini memungkinkan pengguna untuk:
 
-## Laravel Sponsors
+-   🔄 **Swap Token** - Tukar token ERC-20 secara langsung menggunakan protokol Uniswap V2
+-   💧 **Liquidity Pools** - Tambah dan kelola likuiditas untuk pasangan token
+-   👛 **Multi-Wallet Support** - Koneksi dengan MetaMask dan wallet Web3 lainnya
+-   📊 **Real-time Quotes** - Dapatkan harga swap secara real-time
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+---
 
-### Premium Partners
+## 🎯 Fitur Utama
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+<table>
+<tr>
+<td width="50%">
 
-## Contributing
+### 🔄 Token Swap
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+-   Swap ETH/MATIC ke token ERC-20
+-   Swap token ERC-20 ke ETH/MATIC
+-   Swap antar token ERC-20
+-   Slippage tolerance yang bisa dikustomisasi
+-   Transaction deadline setting
 
-## Code of Conduct
+</td>
+<td width="50%">
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### 💧 Liquidity Management
 
-## Security Vulnerabilities
+-   Tambah likuiditas ke pool
+-   Hapus likuiditas dari pool
+-   Lihat posisi likuiditas
+-   Calculate optimal amounts
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+</td>
+</tr>
+<tr>
+<td width="50%">
 
-## License
+### 🌐 Multi-Network
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+-   **Sepolia Testnet** (Ethereum)
+-   **Amoy Testnet** (Polygon)
+-   Network switching yang mudah
+-   Block explorer integration
+
+</td>
+<td width="50%">
+
+### 📱 User Experience
+
+-   Dark/Light mode responsive
+-   Real-time balance updates
+-   Transaction history tracking
+-   Glassmorphism UI design
+
+</td>
+</tr>
+</table>
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer               | Technology                   |
+| ------------------- | ---------------------------- |
+| **Backend**         | Laravel 11, PHP 8.2+         |
+| **Frontend**        | Blade Templates, Vanilla CSS |
+| **Blockchain**      | Ethers.js v6, Web3 Provider  |
+| **Smart Contracts** | Uniswap V2 Router, ERC-20    |
+| **Database**        | MySQL/SQLite                 |
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+-   PHP 8.2+
+-   Composer
+-   Node.js & NPM
+-   MetaMask Extension
+
+### Installation
+
+```bash
+# Clone repository
+git clone https://github.com/your-username/SertSwap.git
+cd SertSwap
+
+# Install PHP dependencies
+composer install
+
+# Install Node dependencies
+npm install
+
+# Setup environment
+cp .env.example .env
+php artisan key:generate
+
+# Run migrations
+php artisan migrate --seed
+
+# Start development server
+php artisan serve
+```
+
+### Configuration
+
+Edit file `.env` untuk konfigurasi:
+
+```env
+# Application
+APP_NAME=SertSwap
+APP_URL=http://localhost:8000
+
+# Database
+DB_CONNECTION=mysql
+DB_DATABASE=sertswap
+```
+
+---
+
+## 🔗 Supported Networks
+
+| Network     | Chain ID | Router Contract | Explorer                                        |
+| ----------- | -------- | --------------- | ----------------------------------------------- |
+| **Sepolia** | 11155111 | Uniswap V2      | [etherscan.io](https://sepolia.etherscan.io)    |
+| **Amoy**    | 80002    | QuickSwap       | [polygonscan.com](https://amoy.polygonscan.com) |
+
+---
+
+## 📁 Project Structure
+
+```
+SertSwap/
+├── app/
+│   ├── Http/Controllers/
+│   │   ├── SwapController.php      # Swap logic
+│   │   ├── LiquidityController.php # Liquidity management
+│   │   └── Api/TokenController.php # Token API
+│   └── Models/
+│       ├── Token.php               # Token model
+│       └── Pool.php                # Liquidity pool model
+├── public/
+│   └── js/
+│       └── web3-service.js         # Web3 interactions
+├── resources/
+│   └── views/
+│       ├── swap/                   # Swap interface
+│       ├── liquidity/              # Liquidity interface
+│       └── layouts/                # App layout
+└── routes/
+    ├── web.php                     # Web routes
+    └── api.php                     # API routes
+```
+
+---
+
+## 🎨 UI Preview
+
+```
+┌──────────────────────────────────────┐
+│         🔄 SertSwap DEX              │
+├──────────────────────────────────────┤
+│  ┌────────────────────────────────┐  │
+│  │  You Pay                       │  │
+│  │  [1.0        ] [ETH ▼]        │  │
+│  │  Balance: 2.5 ETH             │  │
+│  └────────────────────────────────┘  │
+│              ⇅                       │
+│  ┌────────────────────────────────┐  │
+│  │  You Receive                   │  │
+│  │  [1842.50    ] [USDC ▼]       │  │
+│  │  Balance: 500 USDC            │  │
+│  └────────────────────────────────┘  │
+│                                      │
+│  ┌────────────────────────────────┐  │
+│  │        [ Swap Now ]            │  │
+│  └────────────────────────────────┘  │
+└──────────────────────────────────────┘
+```
+
+---
+
+## 🔐 Security
+
+> ⚠️ **Testnet Only**: Platform ini dirancang untuk digunakan di testnet saja. Jangan gunakan untuk transaksi mainnet dengan aset nyata.
+
+-   ✅ Non-custodial - Private keys tidak pernah meninggalkan wallet Anda
+-   ✅ Open source - Kode dapat diaudit
+-   ✅ Standard ERC-20 - Menggunakan kontrak yang sudah teruji
+
+---
+
+## 🤝 Contributing
+
+Kontribusi sangat dihargai! Silakan:
+
+1. Fork repository
+2. Buat feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit perubahan (`git commit -m 'Add some AmazingFeature'`)
+4. Push ke branch (`git push origin feature/AmazingFeature`)
+5. Buka Pull Request
+
+---
+
+## 📄 License
+
+Distributed under the MIT License. See `LICENSE` for more information.
+
+---
+
+## 👤 Author
+
+**Muham**
+
+-   🌐 Built with ❤️ for Web3 community
+-   📧 Contact: [your-email@example.com]
+
+---
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Made%20with-Laravel%20%26%20Web3-6366f1?style=for-the-badge" alt="Made with Laravel & Web3" />
+</p>
+
+<p align="center">
+  <sub>⭐ Star this repo if you find it useful!</sub>
+</p>
