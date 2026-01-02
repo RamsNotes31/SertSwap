@@ -720,9 +720,20 @@
                     if (accounts.length > 0 && accounts[0].toLowerCase() === savedWallet.toLowerCase()) {
                         SertiDex.wallet = accounts[0];
                         SertiDex.walletType = savedType;
+                        SertiDex.provider = new ethers.providers.Web3Provider(window.ethereum);
+                        SertiDex.signer = SertiDex.provider.getSigner();
                         updateWalletUI();
                         loadTokenBalances();
+                    } else {
+                        // Clear stale data if wallet is no longer connected
+                        localStorage.removeItem('sertidex_wallet');
+                        localStorage.removeItem('sertidex_wallet_type');
                     }
+                }).catch(err => {
+                    console.error('Auto-connect error:', err);
+                    // Clear stale data on error
+                    localStorage.removeItem('sertidex_wallet');
+                    localStorage.removeItem('sertidex_wallet_type');
                 });
             }
         });
@@ -865,26 +876,35 @@
 
                 const accounts = await provider.request({ method: 'eth_requestAccounts' });
 
-                if (accounts.length === 0) {
-                    showToast('No accounts found', 'error');
+                if (!accounts || accounts.length === 0) {
+                    showToast('No accounts found. Please unlock your wallet.', 'error');
                     return;
                 }
 
-                SertiDex.wallet = accounts[0];
-                SertiDex.walletType = providerType;
+                const walletAddress = accounts[0];
+
+                // Validate wallet address format
+                if (!walletAddress || !walletAddress.startsWith('0x') || walletAddress.length !== 42) {
+                    showToast('Invalid wallet address received', 'error');
+                    return;
+                }
+
+                // Set state only after validation
+                SertiDex.wallet = walletAddress;
+                SertiDex.walletType = providerName;
                 SertiDex.provider = new ethers.providers.Web3Provider(provider);
                 SertiDex.signer = SertiDex.provider.getSigner();
 
                 // Save to localStorage
-                localStorage.setItem('sertidex_wallet', accounts[0]);
-                localStorage.setItem('sertidex_wallet_type', providerType);
+                localStorage.setItem('sertidex_wallet', walletAddress);
+                localStorage.setItem('sertidex_wallet_type', providerName);
 
                 updateWalletUI();
                 await loadTokenBalances();
                 showToast('Wallet connected!', 'success');
 
                 // Dispatch wallet connected event for other components
-                window.dispatchEvent(new CustomEvent('walletConnected', { detail: { address: accounts[0] } }));
+                window.dispatchEvent(new CustomEvent('walletConnected', { detail: { address: walletAddress } }));
 
                 // Setup listeners
                 provider.on('accountsChanged', handleAccountsChanged);
@@ -892,10 +912,26 @@
 
             } catch (error) {
                 console.error('Connection error:', error);
-                if (error.code === 4001) {
-                    showToast('Connection rejected', 'error');
+
+                // Reset state on error
+                SertiDex.wallet = null;
+                SertiDex.walletType = null;
+                SertiDex.provider = null;
+                SertiDex.signer = null;
+
+                // Clear localStorage on error
+                localStorage.removeItem('sertidex_wallet');
+                localStorage.removeItem('sertidex_wallet_type');
+
+                // Update UI to disconnected state
+                updateWalletUI();
+
+                if (error.code === 4001 || error.code === 'ACTION_REJECTED') {
+                    showToast('Connection rejected by user', 'error');
+                } else if (error.message && error.message.includes('Already processing')) {
+                    showToast('Please check your wallet popup', 'info');
                 } else {
-                    showToast('Failed to connect: ' + (error.message || 'Unknown error'), 'error');
+                    showToast('Connection failed. Please try again.', 'error');
                 }
             }
         }
