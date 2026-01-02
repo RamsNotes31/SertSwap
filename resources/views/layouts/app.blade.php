@@ -12,8 +12,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <!-- Ethers.js -->
-    <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js"></script>
+    <!-- Ethers.js - Using unpkg CDN for reliability -->
+    <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
@@ -996,63 +996,99 @@
             const container = document.getElementById('tokenBalances');
             container.innerHTML = '<div style="text-align: center; padding: 20px;"><span class="spinner"></span></div>';
 
-            // Load all tokens, not just first 5
             const tokens = SertiDex.tokens;
+            let nativeBalanceFormatted = '0.000000';
 
             try {
                 if (typeof ethers !== 'undefined' && window.ethereum && SertiDex.wallet) {
                     const provider = new ethers.providers.Web3Provider(window.ethereum);
 
-                    // First get native balance
+                    // Get current network to check compatibility
+                    let currentChainId = null;
+                    try {
+                        const network = await provider.getNetwork();
+                        currentChainId = network.chainId;
+                    } catch (e) {
+                        console.warn('Could not get network:', e);
+                    }
+
+                    // First get native balance - this should almost always work
                     try {
                         const nativeBalance = await provider.getBalance(SertiDex.wallet);
-                        const nativeBalanceFormatted = parseFloat(ethers.utils.formatEther(nativeBalance)).toFixed(6);
+                        nativeBalanceFormatted = parseFloat(ethers.utils.formatEther(nativeBalance)).toFixed(6);
 
                         // Set for all native token symbols
                         const nativeSymbols = ['ETH', 'MATIC', 'SEP', 'AMOY'];
                         nativeSymbols.forEach(sym => {
                             SertiDex.balances[sym] = nativeBalanceFormatted;
                         });
+
+                        console.log('Native balance loaded:', nativeBalanceFormatted);
                     } catch (e) {
                         console.error('Error getting native balance:', e);
+                        nativeBalanceFormatted = '0.000000';
                     }
 
-                    // Then get ERC20 balances
+                    // Set native token balance for all native tokens first
                     for (const token of tokens) {
+                        if (token.is_native) {
+                            SertiDex.balances[token.symbol] = nativeBalanceFormatted;
+                        }
+                    }
+
+                    // Then try to get ERC20 balances (with timeout and error handling)
+                    for (const token of tokens) {
+                        if (token.is_native) {
+                            continue; // Already handled
+                        }
+
+                        // Skip invalid addresses
+                        if (!token.address ||
+                            token.address === '0x0000000000000000000000000000000000000000' ||
+                            !token.address.startsWith('0x') ||
+                            token.address.length !== 42) {
+                            SertiDex.balances[token.symbol] = '0.000000';
+                            continue;
+                        }
+
                         try {
-                            if (token.is_native) {
-                                // Already set native balance above
-                                const nativeBalance = await provider.getBalance(SertiDex.wallet);
-                                SertiDex.balances[token.symbol] = parseFloat(ethers.utils.formatEther(nativeBalance)).toFixed(6);
-                            } else if (token.address &&
-                                       token.address !== '0x0000000000000000000000000000000000000000' &&
-                                       token.address.startsWith('0x')) {
-                                const abi = [
-                                    'function balanceOf(address) view returns (uint256)',
-                                    'function decimals() view returns (uint8)'
-                                ];
-                                const contract = new ethers.Contract(token.address, abi, provider);
+                            const abi = [
+                                'function balanceOf(address) view returns (uint256)',
+                                'function decimals() view returns (uint8)'
+                            ];
+                            const contract = new ethers.Contract(token.address, abi, provider);
 
-                                const [balance, decimals] = await Promise.all([
-                                    contract.balanceOf(SertiDex.wallet),
-                                    contract.decimals()
-                                ]);
+                            // Use Promise.race with timeout to avoid hanging
+                            const timeoutPromise = new Promise((_, reject) =>
+                                setTimeout(() => reject(new Error('Timeout')), 5000)
+                            );
 
-                                SertiDex.balances[token.symbol] = parseFloat(ethers.utils.formatUnits(balance, decimals)).toFixed(6);
-                            } else {
-                                SertiDex.balances[token.symbol] = '0.000000';
-                            }
+                            const balancePromise = Promise.all([
+                                contract.balanceOf(SertiDex.wallet),
+                                contract.decimals()
+                            ]);
+
+                            const [balance, decimals] = await Promise.race([balancePromise, timeoutPromise]);
+                            SertiDex.balances[token.symbol] = parseFloat(ethers.utils.formatUnits(balance, decimals)).toFixed(6);
                         } catch (e) {
-                            console.error(`Error getting balance for ${token.symbol}:`, e);
+                            // Silently set to 0 - token may not exist on this network
                             SertiDex.balances[token.symbol] = '0.000000';
                         }
                     }
                 } else {
+                    // No ethers or ethereum - set all to 0
                     tokens.forEach(t => { SertiDex.balances[t.symbol] = '0.000000'; });
                 }
             } catch (e) {
                 console.error('Error loading balances:', e);
-                tokens.forEach(t => { SertiDex.balances[t.symbol] = '0.000000'; });
+                // On error, at least show native balance if we got it
+                tokens.forEach(t => {
+                    if (t.is_native) {
+                        SertiDex.balances[t.symbol] = nativeBalanceFormatted;
+                    } else {
+                        SertiDex.balances[t.symbol] = '0.000000';
+                    }
+                });
             }
 
             // Render dropdown balances (show first 5)
